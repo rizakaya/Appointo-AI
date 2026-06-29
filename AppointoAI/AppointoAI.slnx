@@ -1,0 +1,8 @@
+﻿<Solution>
+  <Project Path="src\Appointo.Console\Appointo.Console.csproj" />
+  <Project Path="src\Appointo.Agent\Appointo.Agent.csproj" />
+  <Project Path="src\Appointo.Core\Appointo.Core.csproj" />
+  <Project Path="src\Appointo.Tools\Appointo.Tools.csproj" />
+  <Project Path="src\Appointo.McpServer\Appointo.McpServer.csproj" />
+  <Project Path="tests\Appointo.Tests\Appointo.Tests.csproj" />
+</Solution>
