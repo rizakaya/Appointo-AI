@@ -8,7 +8,8 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Appointment service rejects lunch break", AppointmentServiceRejectsLunchBreak),
     ("Appointment service rejects overlapping slot", AppointmentServiceRejectsOverlappingSlot),
     ("Permission matrix blocks guest cancellation", PermissionMatrixBlocksGuestCancellation),
-    ("Agent asks missing details", AgentAsksMissingDetails)
+    ("Agent asks missing details", AgentAsksMissingDetails),
+    ("Structured output formats parse result", StructuredOutputFormatsParseResult)
 };
 
 var failed = 0;
@@ -67,6 +68,19 @@ static async Task AgentAsksMissingDetails()
     var agent = new AppointmentAgent(new StructuredAppointmentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
     var response = await agent.HandleAsync("Yarin randevu almak istiyorum.", new ConversationState(), UserContext.Guest);
     Assert(response.Contains("ad soyad") || response.Contains("Hangi hizmet"), "Agent eksik bilgi sormali.");
+}
+
+static Task StructuredOutputFormatsParseResult()
+{
+    var parser = new StructuredAppointmentParser();
+    var result = parser.Parse("Yarin saat 14:00 icin Ahmet Kaya adina sac kesim randevusu olustur.", new DateOnly(2026, 6, 29));
+    var json = StructuredOutputFormatter.ToJson(result);
+
+    Assert(json.Contains("\"intent\": \"create_appointment\""), "Intent snake_case JSON olmali.");
+    Assert(json.Contains("\"customerName\": \"Ahmet Kaya\""), "Musteri adi JSON'a yazilmali.");
+    Assert(json.Contains("\"phoneNumber\""), "Telefon alani structured output'ta bulunmali.");
+    Assert(json.Contains("phoneNumber"), "Eksik telefon bilgisi gorunmeli.");
+    return Task.CompletedTask;
 }
 
 static AppointmentService NewService()

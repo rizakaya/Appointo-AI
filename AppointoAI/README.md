@@ -419,6 +419,14 @@ Console uygulamasi:
 dotnet run --project src/Appointo.Console/Appointo.Console.csproj
 ```
 
+Structured output test modu:
+
+```text
+/parse Yarin saat 14:00 icin Ahmet Kaya adina sac kesim randevusu olustur.
+```
+
+Bu komut randevu olusturmaz. Sadece agent'in mesajdan cikardigi intent, alanlar ve eksik bilgileri JSON olarak gosterir.
+
 Local MCP boundary:
 
 ```bash
