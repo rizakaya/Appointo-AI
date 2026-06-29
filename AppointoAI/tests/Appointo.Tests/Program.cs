@@ -9,7 +9,9 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Appointment service rejects overlapping slot", AppointmentServiceRejectsOverlappingSlot),
     ("Permission matrix blocks guest cancellation", PermissionMatrixBlocksGuestCancellation),
     ("Agent asks missing details", AgentAsksMissingDetails),
-    ("Structured output formats parse result", StructuredOutputFormatsParseResult)
+    ("Structured output formats parse result", StructuredOutputFormatsParseResult),
+    ("Ollama parser maps JSON response", OllamaParserMapsJsonResponse),
+    ("Ollama parser falls back on invalid JSON", OllamaParserFallsBackOnInvalidJson)
 };
 
 var failed = 0;
@@ -65,7 +67,7 @@ static async Task PermissionMatrixBlocksGuestCancellation()
 
 static async Task AgentAsksMissingDetails()
 {
-    var agent = new AppointmentAgent(new StructuredAppointmentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
+    var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
     var response = await agent.HandleAsync("Yarin randevu almak istiyorum.", new ConversationState(), UserContext.Guest);
     Assert(response.Contains("ad soyad") || response.Contains("Hangi hizmet"), "Agent eksik bilgi sormali.");
 }
@@ -83,6 +85,42 @@ static Task StructuredOutputFormatsParseResult()
     return Task.CompletedTask;
 }
 
+static async Task OllamaParserMapsJsonResponse()
+{
+    var chat = new FakeChatCompletionClient("""
+        {
+          "intent": "create_appointment",
+          "customerName": "Ahmet Kaya",
+          "phoneNumber": "0555 111 22 33",
+          "serviceType": "dis muayenesi",
+          "requestedDate": "2026-06-30",
+          "requestedTime": "14:00",
+          "timePreference": null,
+          "notes": null,
+          "missingFields": []
+        }
+        """);
+    var parser = new OllamaAppointmentIntentParser(chat);
+
+    var result = await parser.ParseAsync("Yarin randevu al.", new DateOnly(2026, 6, 29));
+
+    Assert(result.Intent == AppointmentIntent.CreateAppointment, "Ollama intent create olmali.");
+    Assert(result.CustomerName == "Ahmet Kaya", "Ollama musteri adini map etmeli.");
+    Assert(result.Date == new DateOnly(2026, 6, 30), "Ollama tarihi map etmeli.");
+    Assert(result.Time == new TimeOnly(14, 0), "Ollama saati map etmeli.");
+}
+
+static async Task OllamaParserFallsBackOnInvalidJson()
+{
+    var chat = new FakeChatCompletionClient("json degil");
+    var parser = new OllamaAppointmentIntentParser(chat);
+
+    var result = await parser.ParseAsync("Yarin saat 14:00 icin Ahmet Kaya adina sac kesim randevusu olustur. 0555 111 22 33", new DateOnly(2026, 6, 29));
+
+    Assert(result.Intent == AppointmentIntent.CreateAppointment, "Fallback rule-based parser calismali.");
+    Assert(result.CustomerName == "Ahmet Kaya", "Fallback musteri adini bulmali.");
+}
+
 static AppointmentService NewService()
 {
     return new AppointmentService(new InMemoryAppointmentRepository(), now: () => new DateTime(2026, 6, 29, 10, 0, 0));
@@ -91,4 +129,19 @@ static AppointmentService NewService()
 static void Assert(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+internal sealed class FakeChatCompletionClient : IChatCompletionClient
+{
+    private readonly string _response;
+
+    public FakeChatCompletionClient(string response)
+    {
+        _response = response;
+    }
+
+    public Task<string> ChatAsync(string systemPrompt, string userMessage, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_response);
+    }
 }

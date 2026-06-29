@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Appointo.Agent;
 
-public sealed class OllamaChatClient
+public sealed class OllamaChatClient : IChatCompletionClient
 {
     private readonly HttpClient _httpClient;
     private readonly OllamaOptions _options;

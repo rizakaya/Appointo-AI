@@ -4,11 +4,11 @@ namespace Appointo.Agent;
 
 public sealed class AppointmentAgent
 {
-    private readonly StructuredAppointmentParser _parser;
+    private readonly IAppointmentIntentParser _parser;
     private readonly ToolGateway _toolGateway;
     private readonly Func<DateOnly> _today;
 
-    public AppointmentAgent(StructuredAppointmentParser parser, ToolGateway toolGateway, Func<DateOnly>? today = null)
+    public AppointmentAgent(IAppointmentIntentParser parser, ToolGateway toolGateway, Func<DateOnly>? today = null)
     {
         _parser = parser;
         _toolGateway = toolGateway;
@@ -17,7 +17,7 @@ public sealed class AppointmentAgent
 
     public async Task<string> HandleAsync(string message, ConversationState state, UserContext user, CancellationToken cancellationToken = default)
     {
-        var parsed = _parser.Parse(message, _today());
+        var parsed = await _parser.ParseAsync(message, _today(), cancellationToken);
         state.Intent = parsed.Intent;
         state.MissingFields.Clear();
         state.MissingFields.AddRange(parsed.MissingFields);

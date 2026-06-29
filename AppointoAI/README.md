@@ -427,6 +427,15 @@ Structured output test modu:
 
 Bu komut randevu olusturmaz. Sadece agent'in mesajdan cikardigi intent, alanlar ve eksik bilgileri JSON olarak gosterir.
 
+Ollama/Qwen parser modu:
+
+```powershell
+$env:APPOINTO_PARSER="ollama"
+dotnet run --project src/Appointo.Console/Appointo.Console.csproj
+```
+
+Bu modda `/parse` ve normal agent akisi once Ollama uzerindeki Qwen modelinden structured JSON almaya calisir. Model bozuk JSON donerse veya Ollama cevap veremezse rule-based parser fallback olarak devreye girer.
+
 Local MCP boundary:
 
 ```bash
@@ -447,7 +456,7 @@ Varsayilan hedef:
 {
   "Ollama": {
     "BaseUrl": "http://localhost:11434",
-    "Model": "qwen"
+    "Model": "qwen3.6:latest"
   }
 }
 ```

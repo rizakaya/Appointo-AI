@@ -5,12 +5,16 @@ using Appointo.Tools;
 var repository = new InMemoryAppointmentRepository();
 var appointmentService = new AppointmentService(repository);
 var gateway = new ToolGateway(appointmentService);
-var parser = new StructuredAppointmentParser();
+var ruleBasedParser = new RuleBasedAppointmentIntentParser();
+IAppointmentIntentParser parser = Environment.GetEnvironmentVariable("APPOINTO_PARSER")?.Equals("ollama", StringComparison.OrdinalIgnoreCase) == true
+    ? new OllamaAppointmentIntentParser(new OllamaChatClient(new HttpClient()), ruleBasedParser)
+    : ruleBasedParser;
 var agent = new AppointmentAgent(parser, gateway);
 var state = new ConversationState();
 
 Console.WriteLine("Appointo AI");
 Console.WriteLine("Cikmak icin 'exit' yazin.");
+Console.WriteLine($"Parser modu: {(parser is OllamaAppointmentIntentParser ? "ollama" : "rule-based")}");
 Console.WriteLine("Structured output gormek icin: /parse <mesaj>");
 Console.WriteLine();
 
@@ -24,7 +28,7 @@ while (true)
     if (input.StartsWith("/parse ", StringComparison.OrdinalIgnoreCase))
     {
         var message = input["/parse ".Length..];
-        var parsed = parser.Parse(message, DateOnly.FromDateTime(DateTime.Now));
+        var parsed = await parser.ParseAsync(message, DateOnly.FromDateTime(DateTime.Now));
         Console.WriteLine(StructuredOutputFormatter.ToJson(parsed));
         Console.WriteLine();
         continue;
