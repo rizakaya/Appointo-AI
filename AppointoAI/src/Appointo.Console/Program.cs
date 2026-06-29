@@ -5,10 +5,7 @@ using Appointo.Tools;
 var repository = new InMemoryAppointmentRepository();
 var appointmentService = new AppointmentService(repository);
 var gateway = new ToolGateway(appointmentService);
-var ruleBasedParser = new RuleBasedAppointmentIntentParser();
-IAppointmentIntentParser parser = Environment.GetEnvironmentVariable("APPOINTO_PARSER")?.Equals("ollama", StringComparison.OrdinalIgnoreCase) == true
-    ? new OllamaAppointmentIntentParser(new OllamaChatClient(new HttpClient()), ruleBasedParser)
-    : ruleBasedParser;
+var parser = SelectParser();
 var agent = new AppointmentAgent(parser, gateway);
 var state = new ConversationState();
 
@@ -37,4 +34,21 @@ while (true)
     var response = await agent.HandleAsync(input, state, UserContext.Guest);
     Console.WriteLine($"Appointo AI: {response}");
     Console.WriteLine();
+}
+
+static IAppointmentIntentParser SelectParser()
+{
+    var ruleBasedParser = new RuleBasedAppointmentIntentParser();
+
+    Console.WriteLine("Appointo AI parser secimi");
+    Console.WriteLine("1. Default parser");
+    Console.WriteLine("2. Ollama parser");
+    Console.Write("Seciminiz (1/2, default 1): ");
+
+    var selection = Console.ReadLine();
+    Console.WriteLine();
+
+    return selection?.Trim() == "2"
+        ? new OllamaAppointmentIntentParser(new OllamaChatClient(new HttpClient()), ruleBasedParser)
+        : ruleBasedParser;
 }
