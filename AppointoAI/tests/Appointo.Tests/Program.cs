@@ -13,7 +13,10 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Agent completes appointment across turns", AgentCompletesAppointmentAcrossTurns),
     ("Structured output formats parse result", StructuredOutputFormatsParseResult),
     ("Ollama parser maps JSON response", OllamaParserMapsJsonResponse),
-    ("Ollama parser falls back on invalid JSON", OllamaParserFallsBackOnInvalidJson)
+    ("Ollama parser falls back on invalid JSON", OllamaParserFallsBackOnInvalidJson),
+    ("Handoff routes missing customer info to customer agent", HandoffRoutesMissingCustomerInfoToCustomerAgent),
+    ("Handoff routes availability question to availability agent", HandoffRoutesAvailabilityQuestionToAvailabilityAgent),
+    ("Handoff routes unknown request to support agent", HandoffRoutesUnknownRequestToSupportAgent)
 };
 
 var failed = 0;
@@ -151,6 +154,33 @@ static async Task OllamaParserFallsBackOnInvalidJson()
 
     Assert(result.Intent == AppointmentIntent.CreateAppointment, "Fallback rule-based parser calismali.");
     Assert(result.CustomerName == "Ahmet Kaya", "Fallback musteri adini bulmali.");
+}
+
+static async Task HandoffRoutesMissingCustomerInfoToCustomerAgent()
+{
+    var router = new HandoffRouter(new RuleBasedAppointmentIntentParser(), () => new DateOnly(2026, 6, 29));
+
+    var decision = await router.DecideAsync("Yarin saat 14:00 icin sac kesim randevusu olustur.");
+
+    Assert(decision.TargetAgent == "CustomerAgent", "Eksik musteri bilgisi CustomerAgent'a gitmeli.");
+}
+
+static async Task HandoffRoutesAvailabilityQuestionToAvailabilityAgent()
+{
+    var router = new HandoffRouter(new RuleBasedAppointmentIntentParser(), () => new DateOnly(2026, 6, 29));
+
+    var decision = await router.DecideAsync("Cuma ogleden sonra bosluk var mi?");
+
+    Assert(decision.TargetAgent == "AvailabilityAgent", "Musaitlik sorusu AvailabilityAgent'a gitmeli.");
+}
+
+static async Task HandoffRoutesUnknownRequestToSupportAgent()
+{
+    var router = new HandoffRouter(new RuleBasedAppointmentIntentParser(), () => new DateOnly(2026, 6, 29));
+
+    var decision = await router.DecideAsync("Bana biraz yardim eder misin?");
+
+    Assert(decision.TargetAgent == "SupportAgent", "Bilinmeyen istek SupportAgent'a gitmeli.");
 }
 
 static AppointmentService NewService()

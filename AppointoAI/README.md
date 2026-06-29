@@ -274,6 +274,33 @@ AppointmentAgent -> AvailabilityAgent
 AppointmentAgent -> SupportAgent
 ```
 
+Console'da handoff kararini gormek icin:
+
+```text
+/handoff Yarin saat 14:00 icin sac kesim randevusu olustur.
+```
+
+Beklenen:
+
+```text
+Target Agent: CustomerAgent
+Reason: Randevu olusturmadan once musteri adi ve telefon bilgisi tamamlanmalidir.
+```
+
+Ornekler:
+
+```text
+/handoff Cuma ogleden sonra bosluk var mi?
+```
+
+Bu istek `AvailabilityAgent` tarafina gider, cunku slot ve musaitlik hesaplama gerektirir.
+
+```text
+/handoff Mehmet Yilmaz'in randevusunu iptal et.
+```
+
+Bu istek once `CustomerAgent` tarafina gider, cunku iptal islemi musteri veya randevu dogrulamasi gerektirir.
+
 ## State Yonetimi
 
 Kullanici randevu bilgisini tek mesajda vermeyebilir.

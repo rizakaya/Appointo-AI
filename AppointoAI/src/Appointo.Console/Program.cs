@@ -11,12 +11,14 @@ var appointmentService = new AppointmentService(repository);
 var gateway = new ToolGateway(appointmentService);
 var parser = SelectParser();
 var agent = new AppointmentAgent(parser, gateway);
+var handoffRouter = new HandoffRouter(parser);
 var state = new ConversationState();
 
 Console.WriteLine("Appointo AI");
 Console.WriteLine("Cikmak icin 'exit' yazin.");
 Console.WriteLine($"Parser modu: {(parser is OllamaAppointmentIntentParser ? "ollama" : "rule-based")}");
 Console.WriteLine("Structured output gormek icin: /parse <mesaj>");
+Console.WriteLine("Handoff kararini gormek icin: /handoff <mesaj>");
 Console.WriteLine();
 
 while (true)
@@ -31,6 +33,16 @@ while (true)
         var message = input["/parse ".Length..];
         var parsed = await parser.ParseAsync(message, DateOnly.FromDateTime(DateTime.Now));
         Console.WriteLine(StructuredOutputFormatter.ToJson(parsed));
+        Console.WriteLine();
+        continue;
+    }
+
+    if (input.StartsWith("/handoff ", StringComparison.OrdinalIgnoreCase))
+    {
+        var message = input["/handoff ".Length..];
+        var decision = await handoffRouter.DecideAsync(message);
+        Console.WriteLine($"Target Agent: {decision.TargetAgent}");
+        Console.WriteLine($"Reason: {decision.Reason}");
         Console.WriteLine();
         continue;
     }
