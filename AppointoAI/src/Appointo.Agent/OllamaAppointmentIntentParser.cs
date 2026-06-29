@@ -116,7 +116,7 @@ public sealed class OllamaAppointmentIntentParser : IAppointmentIntentParser
         AddIfMissing(missing, string.IsNullOrWhiteSpace(dto.PhoneNumber), "phoneNumber");
         AddIfMissing(missing, string.IsNullOrWhiteSpace(dto.ServiceType), "serviceType");
         AddIfMissing(missing, date is null, "date");
-        AddIfMissing(missing, time is null && string.IsNullOrWhiteSpace(dto.TimePreference), "time");
+        AddIfMissing(missing, time is null, "time");
         return missing;
     }
 

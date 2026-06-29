@@ -1,4 +1,4 @@
-﻿namespace Appointo.Core;
+namespace Appointo.Core;
 
 public sealed record OperationResult<T>(bool Success, T? Value, string Message)
 {

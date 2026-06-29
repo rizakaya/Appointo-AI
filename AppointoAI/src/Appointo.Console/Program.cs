@@ -1,6 +1,10 @@
-﻿using Appointo.Agent;
+using Appointo.Agent;
 using Appointo.Core;
 using Appointo.Tools;
+using System.Text;
+
+Console.InputEncoding = Encoding.UTF8;
+Console.OutputEncoding = Encoding.UTF8;
 
 var repository = new InMemoryAppointmentRepository();
 var appointmentService = new AppointmentService(repository);

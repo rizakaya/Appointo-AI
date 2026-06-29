@@ -296,6 +296,34 @@ Kullanici randevu bilgisini tek mesajda vermeyebilir.
 }
 ```
 
+Console akisi bu bilgileri `ConversationState` icinde biriktirir. Ornek:
+
+```text
+Kullanici:
+Yarin randevu almak istiyorum.
+
+Agent:
+Randevuyu olusturabilmem icin ad soyad ve telefon numaranizi alabilir miyim?
+
+Kullanici:
+Ahmet Kaya 0555 111 22 33
+
+Agent:
+Hangi hizmet icin randevu almak istiyorsunuz?
+
+Kullanici:
+sac kesim
+
+Agent:
+Randevu icin hangi saati tercih ediyorsunuz?
+
+Kullanici:
+saat 14:00
+
+Agent:
+Randevu olusturuldu.
+```
+
 ## RAG Bilgi Tabani
 
 Bilgi sorulari tool islemlerinden ayrilir.

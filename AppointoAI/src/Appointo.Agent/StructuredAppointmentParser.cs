@@ -80,7 +80,7 @@ public sealed class StructuredAppointmentParser
         if (string.IsNullOrWhiteSpace(phone)) missing.Add("phoneNumber");
         if (string.IsNullOrWhiteSpace(service)) missing.Add("serviceType");
         if (date is null) missing.Add("date");
-        if (time is null && timePreference is null) missing.Add("time");
+        if (time is null) missing.Add("time");
         return missing;
     }
 

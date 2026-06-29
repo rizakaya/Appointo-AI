@@ -1,4 +1,4 @@
-﻿using Appointo.Core;
+using Appointo.Core;
 using Appointo.Tools;
 
 var repository = new InMemoryAppointmentRepository();

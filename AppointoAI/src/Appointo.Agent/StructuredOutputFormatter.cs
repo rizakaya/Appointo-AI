@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Appointo.Agent;
@@ -6,6 +7,7 @@ public static class StructuredOutputFormatter
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         WriteIndented = true
     };
 

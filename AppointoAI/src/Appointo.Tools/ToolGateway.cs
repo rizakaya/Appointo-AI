@@ -1,4 +1,4 @@
-﻿using Appointo.Core;
+using Appointo.Core;
 
 namespace Appointo.Tools;
 

@@ -1,4 +1,4 @@
-﻿namespace Appointo.Core;
+namespace Appointo.Core;
 
 public sealed record BusinessHours(TimeOnly OpensAt, TimeOnly LunchStartsAt, TimeOnly LunchEndsAt, TimeOnly ClosesAt)
 {

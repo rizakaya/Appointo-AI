@@ -1,4 +1,4 @@
-﻿namespace Appointo.Tools;
+namespace Appointo.Tools;
 
 public sealed class PermissionMatrix
 {

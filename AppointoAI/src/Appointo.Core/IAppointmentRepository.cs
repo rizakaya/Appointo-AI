@@ -1,4 +1,4 @@
-﻿namespace Appointo.Core;
+namespace Appointo.Core;
 
 public interface IAppointmentRepository
 {

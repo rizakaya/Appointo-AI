@@ -1,4 +1,4 @@
-﻿namespace Appointo.Tools;
+namespace Appointo.Tools;
 
 public sealed record ToolExecutionResult(bool Success, string Message, object? Payload = null);
 public sealed record CheckAvailabilityToolRequest(DateOnly Date, TimeOnly StartTime, int DurationMinutes);

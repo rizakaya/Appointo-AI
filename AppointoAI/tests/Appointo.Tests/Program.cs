@@ -1,14 +1,16 @@
-﻿using Appointo.Agent;
+using Appointo.Agent;
 using Appointo.Core;
 using Appointo.Tools;
 
 var tests = new List<(string Name, Func<Task> Run)>
 {
     ("Intent parser detects create appointment", IntentParserDetectsCreateAppointment),
+    ("Intent parser supports Turkish characters", IntentParserSupportsTurkishCharacters),
     ("Appointment service rejects lunch break", AppointmentServiceRejectsLunchBreak),
     ("Appointment service rejects overlapping slot", AppointmentServiceRejectsOverlappingSlot),
     ("Permission matrix blocks guest cancellation", PermissionMatrixBlocksGuestCancellation),
     ("Agent asks missing details", AgentAsksMissingDetails),
+    ("Agent completes appointment across turns", AgentCompletesAppointmentAcrossTurns),
     ("Structured output formats parse result", StructuredOutputFormatsParseResult),
     ("Ollama parser maps JSON response", OllamaParserMapsJsonResponse),
     ("Ollama parser falls back on invalid JSON", OllamaParserFallsBackOnInvalidJson)
@@ -42,6 +44,19 @@ static Task IntentParserDetectsCreateAppointment()
     return Task.CompletedTask;
 }
 
+static Task IntentParserSupportsTurkishCharacters()
+{
+    var parser = new StructuredAppointmentParser();
+    var result = parser.Parse("Yarın saat 14:00 için Çağla Şahin adına saç kesim randevusu oluştur. 0555 333 44 55", new DateOnly(2026, 6, 29));
+    var json = StructuredOutputFormatter.ToJson(result);
+
+    Assert(result.Intent == AppointmentIntent.CreateAppointment, "Turkce karakterli intent create olmali.");
+    Assert(result.CustomerName == "Çağla Şahin", "Turkce karakterli musteri adi bulunmali.");
+    Assert(result.ServiceType == "sac kesim", "Turkce karakterli hizmet normalize edilmeli.");
+    Assert(json.Contains("Çağla Şahin"), "JSON Turkce karakterleri okunur yazmali.");
+    return Task.CompletedTask;
+}
+
 static async Task AppointmentServiceRejectsLunchBreak()
 {
     var service = NewService();
@@ -70,6 +85,23 @@ static async Task AgentAsksMissingDetails()
     var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
     var response = await agent.HandleAsync("Yarin randevu almak istiyorum.", new ConversationState(), UserContext.Guest);
     Assert(response.Contains("ad soyad") || response.Contains("Hangi hizmet"), "Agent eksik bilgi sormali.");
+}
+
+static async Task AgentCompletesAppointmentAcrossTurns()
+{
+    var state = new ConversationState();
+    var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
+
+    var first = await agent.HandleAsync("Yarin randevu almak istiyorum.", state, UserContext.Guest);
+    var second = await agent.HandleAsync("Ahmet Kaya 0555 111 22 33", state, UserContext.Guest);
+    var third = await agent.HandleAsync("sac kesim", state, UserContext.Guest);
+    var fourth = await agent.HandleAsync("saat 14:00", state, UserContext.Guest);
+
+    Assert(first.Contains("ad soyad"), "Ilk cevap ad soyad istemeli.");
+    Assert(second.Contains("Hangi hizmet"), "Ikinci cevap hizmet istemeli.");
+    Assert(third.Contains("hangi saati", StringComparison.OrdinalIgnoreCase), "Ucuncu cevap saat istemeli.");
+    Assert(fourth.Contains("Randevu olusturuldu"), "Son cevap randevuyu olusturmali.");
+    Assert(state.Intent == AppointmentIntent.Unknown, "Basarili randevudan sonra state temizlenmeli.");
 }
 
 static Task StructuredOutputFormatsParseResult()
