@@ -1,4 +1,4 @@
-﻿# Appointo AI
+# Appointo AI
 
 Appointo AI, .NET ile gelistirilen, yerel Ollama uzerinde calisan Qwen modelini hedefleyen agentic randevu kayit projesidir.
 
@@ -435,6 +435,7 @@ Guvenlik testleri:
 - Tool gateway mantigi.
 - Tool permission matrix.
 - Tool cagrilarini loglama.
+- Ayrintili notlar: `MCP-readme.md`
 
 ### Hafta 7 - Production Hazirligi
 
@@ -567,3 +568,4 @@ Asil hedef:
 - Production'da nasil izlenir?
 
 Bu proje bittiginde ayni mimariyle Jira issue analysis agent, bayi sorgulama agent, dokuman olusturma agent, satis destek agent, servis talebi agent, IK basvuru agent veya teknik destek agent yazabilecek seviyeye gelmek hedeflenir.
+

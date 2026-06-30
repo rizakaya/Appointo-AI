@@ -6,21 +6,27 @@ public sealed class ToolGateway
 {
     private readonly AppointmentService _appointmentService;
     private readonly PermissionMatrix _permissionMatrix;
+    private readonly IToolExecutionLogger _logger;
 
-    public ToolGateway(AppointmentService appointmentService, PermissionMatrix? permissionMatrix = null)
+    public ToolGateway(AppointmentService appointmentService, PermissionMatrix? permissionMatrix = null, IToolExecutionLogger? logger = null)
     {
         _appointmentService = appointmentService;
         _permissionMatrix = permissionMatrix ?? new PermissionMatrix();
+        _logger = logger ?? new InMemoryToolExecutionLogger();
     }
 
     public async Task<ToolExecutionResult> ExecuteAsync(string toolName, object request, UserContext user, CancellationToken cancellationToken = default)
     {
+        Log(toolName, user.Role, success: true, stage: "Attempt", message: "Tool cagrisi alindi.");
+
         if (!_permissionMatrix.CanExecute(toolName, user))
         {
-            return new ToolExecutionResult(false, "Bu tool'u calistirmak icin yetkiniz yok.");
+            var denied = new ToolExecutionResult(false, "Bu tool'u calistirmak icin yetkiniz yok.");
+            Log(toolName, user.Role, denied.Success, "Denied", denied.Message);
+            return denied;
         }
 
-        return toolName switch
+        var result = toolName switch
         {
             AppointmentToolNames.CheckAvailability => await CheckAvailabilityAsync((CheckAvailabilityToolRequest)request, cancellationToken),
             AppointmentToolNames.CreateAppointment => await CreateAppointmentAsync((CreateAppointmentToolRequest)request, cancellationToken),
@@ -29,6 +35,9 @@ public sealed class ToolGateway
             AppointmentToolNames.FindNextAvailableSlot => await FindNextAvailableSlotAsync((FindNextAvailableSlotToolRequest)request, cancellationToken),
             _ => new ToolExecutionResult(false, "Bilinmeyen tool.")
         };
+
+        Log(toolName, user.Role, result.Success, "Completed", result.Message);
+        return result;
     }
 
     public IReadOnlyList<AppointmentToolSchema> GetSchemas()
@@ -43,6 +52,8 @@ public sealed class ToolGateway
             new(AppointmentToolNames.FindNextAvailableSlot, "En yakin musait slotlari bulur.", ["from", "serviceType"])
         ];
     }
+
+    public IReadOnlyList<ToolExecutionLogEntry> GetLogs() => _logger.GetEntries();
 
     private async Task<ToolExecutionResult> CheckAvailabilityAsync(CheckAvailabilityToolRequest request, CancellationToken cancellationToken)
     {
@@ -78,5 +89,10 @@ public sealed class ToolGateway
 
         var text = string.Join(", ", result.Value.Select(x => $"{x.Date:dd.MM.yyyy} {x.StartTime:HH:mm}"));
         return new ToolExecutionResult(true, $"Uygun slotlar: {text}", result.Value);
+    }
+
+    private void Log(string toolName, UserRole role, bool success, string stage, string message)
+    {
+        _logger.Log(new ToolExecutionLogEntry(DateTime.UtcNow, toolName, role, success, stage, message));
     }
 }

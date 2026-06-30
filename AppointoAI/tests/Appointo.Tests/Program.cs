@@ -9,6 +9,8 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Appointment service rejects lunch break", AppointmentServiceRejectsLunchBreak),
     ("Appointment service rejects overlapping slot", AppointmentServiceRejectsOverlappingSlot),
     ("Permission matrix blocks guest cancellation", PermissionMatrixBlocksGuestCancellation),
+    ("Tool gateway logs successful execution", ToolGatewayLogsSuccessfulExecution),
+    ("Tool gateway logs denied execution", ToolGatewayLogsDeniedExecution),
     ("Agent asks missing details", AgentAsksMissingDetails),
     ("Agent completes appointment across turns", AgentCompletesAppointmentAcrossTurns),
     ("Agent answers service info from knowledge base", AgentAnswersServiceInfoFromKnowledgeBase),
@@ -84,6 +86,37 @@ static async Task PermissionMatrixBlocksGuestCancellation()
     var gateway = new ToolGateway(NewService());
     var result = await gateway.ExecuteAsync(AppointmentToolNames.CancelAppointment, new CancelAppointmentToolRequest(Guid.NewGuid()), UserContext.Guest);
     Assert(!result.Success, "Guest iptal tool'unu calistiramamali.");
+}
+
+static async Task ToolGatewayLogsSuccessfulExecution()
+{
+    var logger = new InMemoryToolExecutionLogger();
+    var gateway = new ToolGateway(NewService(), logger: logger);
+
+    var result = await gateway.ExecuteAsync(
+        AppointmentToolNames.FindNextAvailableSlot,
+        new FindNextAvailableSlotToolRequest(new DateOnly(2026, 6, 30), "danismanlik", "afternoon"),
+        UserContext.Guest);
+
+    Assert(result.Success, "Demo slot sorgusu basarili olmali.");
+    Assert(logger.GetEntries().Count == 2, "Basarili cagrida attempt ve completed loglari olusmali.");
+    Assert(logger.GetEntries()[0].Stage == "Attempt", "Ilk log attempt olmali.");
+    Assert(logger.GetEntries()[1].Stage == "Completed", "Ikinci log completed olmali.");
+}
+
+static async Task ToolGatewayLogsDeniedExecution()
+{
+    var logger = new InMemoryToolExecutionLogger();
+    var gateway = new ToolGateway(NewService(), logger: logger);
+
+    var result = await gateway.ExecuteAsync(
+        AppointmentToolNames.CancelAppointment,
+        new CancelAppointmentToolRequest(Guid.NewGuid()),
+        UserContext.Guest);
+
+    Assert(!result.Success, "Guest iptal yetkisi olmamali.");
+    Assert(logger.GetEntries().Count == 2, "Reddedilen cagrida attempt ve denied loglari olusmali.");
+    Assert(logger.GetEntries()[1].Stage == "Denied", "Ikinci log denied olmali.");
 }
 
 static async Task AgentAsksMissingDetails()
