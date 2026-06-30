@@ -1,4 +1,4 @@
-﻿# Hizmetler
+# Hizmetler
 
 Appointo AI ilk surumde su hizmetleri bilir:
 
@@ -9,4 +9,8 @@ Appointo AI ilk surumde su hizmetleri bilir:
 | Arac bakim | 60 dakika |
 | Danismanlik | 60 dakika |
 
-Bu dosya RAG fazinda bilgi kaynagi olarak kullanilacak. Agent hizmet sorularini uydurmak yerine bu dokumandan cevaplamalidir.
+Ek notlar:
+
+- Hizmet suresi randevu planlamasi sirasinda backend kurallariyla kontrol edilir.
+- Ayni gunde ayni hizmet icin ikinci aktif randevu olusturulamaz.
+- Kullanici hizmet detayini sordugunda agent bu dosyayi referans alarak cevap vermelidir.

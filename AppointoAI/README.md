@@ -428,6 +428,7 @@ Guvenlik testleri:
 - Hizmet bilgileri dokumani.
 - Calisma saatleri dokumani.
 - Iptal politikasi dokumani.
+- Bu dokumanlari okuyup bilgi sorularini cevaplayan calisan bir bilgi tabani akisi.
 
 ### Hafta 6 - MCP / Tool Gateway
 

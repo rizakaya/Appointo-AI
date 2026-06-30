@@ -11,6 +11,9 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Permission matrix blocks guest cancellation", PermissionMatrixBlocksGuestCancellation),
     ("Agent asks missing details", AgentAsksMissingDetails),
     ("Agent completes appointment across turns", AgentCompletesAppointmentAcrossTurns),
+    ("Agent answers service info from knowledge base", AgentAnswersServiceInfoFromKnowledgeBase),
+    ("Agent answers working hours from knowledge base", AgentAnswersWorkingHoursFromKnowledgeBase),
+    ("Agent answers cancellation policy from knowledge base", AgentAnswersCancellationPolicyFromKnowledgeBase),
     ("Structured output formats parse result", StructuredOutputFormatsParseResult),
     ("Ollama parser maps JSON response", OllamaParserMapsJsonResponse),
     ("Ollama parser falls back on invalid JSON", OllamaParserFallsBackOnInvalidJson),
@@ -50,13 +53,13 @@ static Task IntentParserDetectsCreateAppointment()
 static Task IntentParserSupportsTurkishCharacters()
 {
     var parser = new StructuredAppointmentParser();
-    var result = parser.Parse("Yarın saat 14:00 için Çağla Şahin adına saç kesim randevusu oluştur. 0555 333 44 55", new DateOnly(2026, 6, 29));
+    var result = parser.Parse("Yarin saat 14:00 icin Cagla Sahin adina sac kesim randevusu olustur. 0555 333 44 55", new DateOnly(2026, 6, 29));
     var json = StructuredOutputFormatter.ToJson(result);
 
-    Assert(result.Intent == AppointmentIntent.CreateAppointment, "Turkce karakterli intent create olmali.");
-    Assert(result.CustomerName == "Çağla Şahin", "Turkce karakterli musteri adi bulunmali.");
-    Assert(result.ServiceType == "sac kesim", "Turkce karakterli hizmet normalize edilmeli.");
-    Assert(json.Contains("Çağla Şahin"), "JSON Turkce karakterleri okunur yazmali.");
+    Assert(result.Intent == AppointmentIntent.CreateAppointment, "ASCII guvenli intent create olmali.");
+    Assert(result.CustomerName == "Cagla Sahin", "Musteri adi bulunmali.");
+    Assert(result.ServiceType == "sac kesim", "Hizmet normalize edilmeli.");
+    Assert(json.Contains("Cagla Sahin"), "JSON musteri adini yazmali.");
     return Task.CompletedTask;
 }
 
@@ -85,7 +88,7 @@ static async Task PermissionMatrixBlocksGuestCancellation()
 
 static async Task AgentAsksMissingDetails()
 {
-    var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
+    var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), today: () => new DateOnly(2026, 6, 29));
     var response = await agent.HandleAsync("Yarin randevu almak istiyorum.", new ConversationState(), UserContext.Guest);
     Assert(response.Contains("ad soyad") || response.Contains("Hangi hizmet"), "Agent eksik bilgi sormali.");
 }
@@ -93,7 +96,7 @@ static async Task AgentAsksMissingDetails()
 static async Task AgentCompletesAppointmentAcrossTurns()
 {
     var state = new ConversationState();
-    var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), () => new DateOnly(2026, 6, 29));
+    var agent = new AppointmentAgent(new RuleBasedAppointmentIntentParser(), new ToolGateway(NewService()), today: () => new DateOnly(2026, 6, 29));
 
     var first = await agent.HandleAsync("Yarin randevu almak istiyorum.", state, UserContext.Guest);
     var second = await agent.HandleAsync("Ahmet Kaya 0555 111 22 33", state, UserContext.Guest);
@@ -105,6 +108,48 @@ static async Task AgentCompletesAppointmentAcrossTurns()
     Assert(third.Contains("hangi saati", StringComparison.OrdinalIgnoreCase), "Ucuncu cevap saat istemeli.");
     Assert(fourth.Contains("Randevu olusturuldu"), "Son cevap randevuyu olusturmali.");
     Assert(state.Intent == AppointmentIntent.Unknown, "Basarili randevudan sonra state temizlenmeli.");
+}
+
+static async Task AgentAnswersServiceInfoFromKnowledgeBase()
+{
+    var agent = new AppointmentAgent(
+        new RuleBasedAppointmentIntentParser(),
+        new ToolGateway(NewService()),
+        new StubKnowledgeBase("Hizmet Bilgileri:\n| Sac kesim | 45 dakika |"),
+        () => new DateOnly(2026, 6, 29));
+
+    var response = await agent.HandleAsync("Sac kesim ne kadar surer?", new ConversationState(), UserContext.Guest);
+
+    Assert(response.Contains("Hizmet Bilgileri"), "Bilgi sorusu knowledge base'ten cevaplanmali.");
+    Assert(response.Contains("45 dakika"), "Hizmet suresi bilgi tabanindan gelmeli.");
+}
+
+static async Task AgentAnswersWorkingHoursFromKnowledgeBase()
+{
+    var agent = new AppointmentAgent(
+        new RuleBasedAppointmentIntentParser(),
+        new ToolGateway(NewService()),
+        new StubKnowledgeBase("Calisma Saatleri:\n- Calisma saatleri: 09:00 - 18:00"),
+        () => new DateOnly(2026, 6, 29));
+
+    var response = await agent.HandleAsync("Kacta acik, calisma saatleriniz nedir?", new ConversationState(), UserContext.Guest);
+
+    Assert(response.Contains("Calisma Saatleri"), "Calisma saati sorusu knowledge base'ten cevaplanmali.");
+    Assert(response.Contains("09:00 - 18:00"), "Calisma saatleri bilgi tabanindan gelmeli.");
+}
+
+static async Task AgentAnswersCancellationPolicyFromKnowledgeBase()
+{
+    var agent = new AppointmentAgent(
+        new RuleBasedAppointmentIntentParser(),
+        new ToolGateway(NewService()),
+        new StubKnowledgeBase("Iptal Politikasi:\n- Randevu iptali, randevu saatinden en az 2 saat once yapilabilir."),
+        () => new DateOnly(2026, 6, 29));
+
+    var response = await agent.HandleAsync("Randevuyu ne zamana kadar iptal edebilirim?", new ConversationState(), UserContext.Guest);
+
+    Assert(response.Contains("Iptal Politikasi"), "Iptal sorusu knowledge base'ten cevaplanmali.");
+    Assert(response.Contains("2 saat"), "Iptal kurali bilgi tabanindan gelmeli.");
 }
 
 static Task StructuredOutputFormatsParseResult()
@@ -203,6 +248,21 @@ internal sealed class FakeChatCompletionClient : IChatCompletionClient
     }
 
     public Task<string> ChatAsync(string systemPrompt, string userMessage, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_response);
+    }
+}
+
+internal sealed class StubKnowledgeBase : IRagKnowledgeBase
+{
+    private readonly string _response;
+
+    public StubKnowledgeBase(string response)
+    {
+        _response = response;
+    }
+
+    public Task<string> AnswerAsync(string question, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_response);
     }

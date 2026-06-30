@@ -6,12 +6,14 @@ public sealed class AppointmentAgent
 {
     private readonly IAppointmentIntentParser _parser;
     private readonly ToolGateway _toolGateway;
+    private readonly IRagKnowledgeBase _knowledgeBase;
     private readonly Func<DateOnly> _today;
 
-    public AppointmentAgent(IAppointmentIntentParser parser, ToolGateway toolGateway, Func<DateOnly>? today = null)
+    public AppointmentAgent(IAppointmentIntentParser parser, ToolGateway toolGateway, IRagKnowledgeBase? knowledgeBase = null, Func<DateOnly>? today = null)
     {
         _parser = parser;
         _toolGateway = toolGateway;
+        _knowledgeBase = knowledgeBase ?? new FileRagKnowledgeBase(AppContext.BaseDirectory);
         _today = today ?? (() => DateOnly.FromDateTime(DateTime.Now));
     }
 
@@ -28,6 +30,12 @@ public sealed class AppointmentAgent
         {
             state.LastQuestion = "Bu istegi randevu islemi olarak anlayamadim. Randevu almak, iptal etmek veya musait saat sormak ister misiniz?";
             return state.LastQuestion;
+        }
+
+        if (current.Intent == AppointmentIntent.GetServiceInformation)
+        {
+            ClearState(state);
+            return await _knowledgeBase.AnswerAsync(message, cancellationToken);
         }
 
         if (current.MissingFields.Count > 0)

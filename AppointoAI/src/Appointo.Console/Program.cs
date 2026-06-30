@@ -10,7 +10,8 @@ var repository = new InMemoryAppointmentRepository();
 var appointmentService = new AppointmentService(repository);
 var gateway = new ToolGateway(appointmentService);
 var parser = SelectParser();
-var agent = new AppointmentAgent(parser, gateway);
+var knowledgeBase = new FileRagKnowledgeBase(AppContext.BaseDirectory);
+var agent = new AppointmentAgent(parser, gateway, knowledgeBase);
 var handoffRouter = new HandoffRouter(parser);
 var state = new ConversationState();
 

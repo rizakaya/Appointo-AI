@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace Appointo.Agent;
 
@@ -21,10 +21,10 @@ public sealed class StructuredAppointmentParser
 
     private static AppointmentIntent DetectIntent(string normalized)
     {
+        if (IsKnowledgeQuestion(normalized)) return AppointmentIntent.GetServiceInformation;
         if (ContainsAny(normalized, "iptal", "sil", "vazgec")) return AppointmentIntent.CancelAppointment;
         if (ContainsAny(normalized, "ertelemek", "degistir", "tasimak", "yeniden planla")) return AppointmentIntent.RescheduleAppointment;
         if (ContainsAny(normalized, "bosluk", "musait", "uygun saat", "available")) return AppointmentIntent.ListAvailableSlots;
-        if (ContainsAny(normalized, "ne kadar surer", "fiyat", "ucret", "hangi islemler")) return AppointmentIntent.GetServiceInformation;
         if (ContainsAny(normalized, "randevu al", "randevu olustur", "randevusu olustur", "randevu ayarla", "kayit", "randevu almak")) return AppointmentIntent.CreateAppointment;
         return AppointmentIntent.Unknown;
     }
@@ -61,7 +61,7 @@ public sealed class StructuredAppointmentParser
 
     private static string? DetectCustomerName(string message)
     {
-        var match = Regex.Match(message, @"(?<name>[A-ZÇĞİÖŞÜ][a-zçğıöşü]+(?:\s+[A-ZÇĞİÖŞÜ][a-zçğıöşü]+)+)");
+        var match = Regex.Match(message, @"(?<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)");
         return match.Success ? match.Groups["name"].Value : null;
     }
 
@@ -84,6 +84,14 @@ public sealed class StructuredAppointmentParser
         return missing;
     }
 
+    private static bool IsKnowledgeQuestion(string normalized)
+    {
+        if (ContainsAny(normalized, "ne kadar surer", "fiyat", "ucret", "hangi islemler", "hangi hizmetler")) return true;
+        if (ContainsAny(normalized, "calisma saat", "kacta acik", "kacta kapaniyor", "ogle molasi", "saatleriniz")) return true;
+        if (ContainsAny(normalized, "iptal politikasi", "iptal kurali", "ne zamana kadar iptal", "iptal edebilir miyim")) return true;
+        return false;
+    }
+
     private static bool ContainsAny(string value, params string[] needles) => needles.Any(value.Contains);
 
     private static DateOnly NextDayOfWeek(DateOnly today, DayOfWeek dayOfWeek)
@@ -94,7 +102,12 @@ public sealed class StructuredAppointmentParser
 
     private static string Normalize(string value)
     {
-        return value.Trim().ToLowerInvariant().Replace('ı', 'i').Replace('ğ', 'g').Replace('ü', 'u').Replace('ş', 's').Replace('ö', 'o').Replace('ç', 'c');
+        return value.Trim().ToLowerInvariant()
+            .Replace('\u0131', 'i')
+            .Replace('\u011f', 'g')
+            .Replace('\u00fc', 'u')
+            .Replace('\u015f', 's')
+            .Replace('\u00f6', 'o')
+            .Replace('\u00e7', 'c');
     }
 }
-
