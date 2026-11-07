@@ -4,6 +4,8 @@ Appointo AI, .NET ile gelistirilen, yerel Ollama uzerinde calisan Qwen modelini 
 
 Bu proje bir randevu botundan daha fazlasidir. Amac, agent mimarisini, structured output uretimini, tool calling yaklasimini, MCP mantigini, eksik bilgi tamamlama akisini, handoff yapisini ve permission kontrollu tool gateway fikrini uygulamali olarak ogrenmektir.
 
+![Appointo AI: mesajdan onaylı randevuya](docs/appointo-ai-cover.png)
+
 ## Ne Yapiyoruz?
 
 Kullanici dogal dilde randevu talebi yazar:
@@ -64,8 +66,12 @@ flowchart LR
 ## Solution Yapisi
 
 ```text
+README.md
+docs/
+  appointo-ai-cover.png
 AppointoAI/
   AppointoAI.slnx
+  MCP-readme.md
   src/
     Appointo.Console/
     Appointo.Agent/
@@ -78,7 +84,6 @@ AppointoAI/
     services.md
     working-hours.md
     cancellation-policy.md
-  README.md
 ```
 
 ## Projeler
@@ -361,9 +366,9 @@ Bilgi sorulari tool islemlerinden ayrilir.
 
 Bilgi dosyalari:
 
-- `docs/services.md`
-- `docs/working-hours.md`
-- `docs/cancellation-policy.md`
+- [services.md](AppointoAI/docs/services.md)
+- [working-hours.md](AppointoAI/docs/working-hours.md)
+- [cancellation-policy.md](AppointoAI/docs/cancellation-policy.md)
 
 ## Test ve Evaluation
 
@@ -435,7 +440,7 @@ Guvenlik testleri:
 - Tool gateway mantigi.
 - Tool permission matrix.
 - Tool cagrilarini loglama.
-- Ayrintili notlar: `MCP-readme.md`
+- Ayrintili notlar: [MCP-readme.md](AppointoAI/MCP-readme.md)
 
 ### Hafta 7 - Production Hazirligi
 
@@ -470,10 +475,12 @@ MVP'ye dahil olmayanlar:
 
 ## Calistirma
 
+Komutlari depo kokunden calistir.
+
 Console uygulamasi:
 
 ```bash
-dotnet run --project src/Appointo.Console/Appointo.Console.csproj
+dotnet run --project AppointoAI/src/Appointo.Console/Appointo.Console.csproj
 ```
 
 Structured output test modu:
@@ -498,13 +505,13 @@ Seciminiz (1/2, default 1):
 Local MCP boundary:
 
 ```bash
-dotnet run --project src/Appointo.McpServer/Appointo.McpServer.csproj
+dotnet run --project AppointoAI/src/Appointo.McpServer/Appointo.McpServer.csproj
 ```
 
 Test runner:
 
 ```bash
-dotnet run --project tests/Appointo.Tests/Appointo.Tests.csproj
+dotnet run --project AppointoAI/tests/Appointo.Tests/Appointo.Tests.csproj
 ```
 
 ## Ollama / Qwen
